@@ -45,17 +45,3 @@ class AdvertisementSerializer(serializers.ModelSerializer):
         count_advertisement = Advertisement.objects.filter(creator=auth_user_id, status='OPEN').count()
         if count_advertisement < 10:
             return data
-
-class FavoriteSerializer(serializers.ModelSerializer):
-    """Serializer для избранных объявлений."""
-
-    user = UserSerializer(
-        read_only=True,
-    )
-    advertisement = AdvertisementSerializer(
-        read_only=True,
-    )
-
-    class Meta:
-        model = Favorite
-        fields = ('id', 'user', 'advertisement',)

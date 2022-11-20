@@ -20,10 +20,10 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 # TODO: подключите `AdvertisementViewSet`
-from advertisements.views import AdvertisementViewSet\
+from advertisements.views import AdvertisementViewSet
     #, FavoriteViewSet
 
-router.register('advertisements', AdvertisementViewSet)
+router.register('advertisements', AdvertisementViewSet, basename='Advertisement')
 # router.register('favorites', FavoriteViewSet)
 
 urlpatterns = [
