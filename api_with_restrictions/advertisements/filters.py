@@ -10,6 +10,7 @@ class AdvertisementFilter(filters.FilterSet):
     created_at = DateFromToRangeFilter()
     status = AllValuesFilter(field_name='status')
     creator = AllValuesFilter(field_name='creator')
+
     class Meta:
         model = Advertisement
         fields = ['created_at', 'status', 'creator']
