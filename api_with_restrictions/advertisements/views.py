@@ -1,5 +1,6 @@
 import django_filters
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
@@ -20,10 +21,12 @@ class AdvertisementViewSet(ModelViewSet):
     #   сериализаторов и фильтров
     def get_queryset(self):
         user_id = self.request.user.id
-        queryset = Advertisement.objects.filter(creator_id=user_id) \
-            .union(Advertisement.objects.exclude(status='DRAFT'))
+
+        queryset = (Advertisement.objects.filter(creator_id=user_id) |
+                    (Advertisement.objects.exclude(status='DRAFT')))
+
         return queryset
-    
+
     serializer_class = AdvertisementSerializer
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     filter_backends = (django_filters.rest_framework.DjangoFilterBackend,)
@@ -35,15 +38,18 @@ class AdvertisementViewSet(ModelViewSet):
             return [IsAuthenticated(), OwnerHasRights()]
         return []
 
+    # в методе add_favorite() нужно получить само
+    # объявление и сравнить его автора с request.user
     @action(detail=True, methods=['post'])
     def add_favorite(self, request, pk=None):
-        if Advertisement.objects.filter(creator=request.user.id, id=pk):
-            return Response({'status': 'User is creator'})
+        advertisement = Advertisement.objects.filter(id=pk).first()
+        if advertisement.creator.id == request.user.id:
+            raise ValidationError("Not add favorite. User is creator")
         else:
-            Favorite.objects.create(user_id=request.user.id, advertisement_id=pk)
-            return Response({'status': 'Add favorites'})
+            return Response(Favorite.objects.create(user_id=request.user.id, advertisement_id=pk).id)
+
 
     @action(detail=False)
     def favorites(self, request):
-        #return Response(list(item['advertisement_id'] for item in Favorite.objects.filter(user_id=request.user.id).values('advertisement_id')))
-        return Response(Favorite.objects.filter(user_id=request.user.id).values_list('advertisement_id'))
+        advertisement_favorites = Advertisement.objects.filter(id__in=Favorite.objects.filter(user_id=request.user.id).values_list('advertisement_id')).values()
+        return Response(advertisement_favorites)
